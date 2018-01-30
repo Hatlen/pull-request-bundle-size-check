@@ -20,11 +20,14 @@ webhooks.on('pull_request', ({ payload }) => {
   );
 
   const {
-    pull_request: { url, state },
-    statuses_url: statusesUrl, // probably used for setting the pull request status
-    head: {
-      ref, // branch-name
-      sha, // commit sha
+    pull_request: {
+      url,
+      state,
+      head: {
+        ref, // branch-name
+        sha, // commit sha
+      },
+      statuses_url: statusesUrl, // probably used for setting the pull request status
     },
   } = payload;
 
