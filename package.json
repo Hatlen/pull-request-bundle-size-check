@@ -15,6 +15,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@octokit/rest": "^14.0.7",
     "@octokit/webhooks": "^3.1.0",
     "debug": "^3.1.0"
   },
