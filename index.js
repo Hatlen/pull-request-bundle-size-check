@@ -1,4 +1,24 @@
 const WebhooksApi = require('@octokit/webhooks');
+const octokit = require('@octokit/rest')();
+
+octokit.authenticate({
+  type: 'token',
+  token: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
+});
+
+const setStatusPending = ({
+  owner, repo, sha, state,
+}) => {
+  octokit.repos
+    .createStatus({
+      owner,
+      repo,
+      sha,
+      state,
+      context: 'WIP: Performance budget',
+    })
+    .catch(error => console.log(error));
+};
 
 const webhooks = new WebhooksApi({
   secret: process.env.GITHUB_SECRET,
@@ -20,23 +40,30 @@ webhooks.on('pull_request', ({ payload }) => {
   );
 
   const {
-    pull_request: {
-      url,
-      state,
-      head: {
-        ref, // branch-name
-        sha, // commit sha
-      },
-      statuses_url: statusesUrl, // probably used for setting the pull request status
-    },
+    pull_request: { head: { sha } },
+    repository: { name: repo, owner: { login: owner } },
   } = payload;
+
+  setStatusPending({
+    owner,
+    repo,
+    sha,
+    state: 'pending',
+  });
+
+  setTimeout(() => {
+    setStatusPending({
+      owner,
+      repo,
+      sha,
+      state: 'success',
+    });
+  }, 15e3);
 
   console.log('data:');
   console.log({
-    url,
-    state,
-    statusesUrl,
-    ref,
+    owner,
+    repo,
     sha,
   });
 });
