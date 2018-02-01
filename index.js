@@ -65,9 +65,15 @@ webhooks.on('pull_request', ({ payload }) => {
   );
 
   const {
+    action,
     pull_request: { head: { sha, ref: branch } },
     repository: { name: repo, owner: { login: owner } },
   } = payload;
+
+  if (!['opened', 'synchronize'].includes(action)) {
+    console.log("exiting since the action wasn't opened or synchronize");
+    return;
+  }
 
   setStatusPending({
     owner,
