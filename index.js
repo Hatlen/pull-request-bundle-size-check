@@ -1,10 +1,35 @@
 const WebhooksApi = require('@octokit/webhooks');
 const octokit = require('@octokit/rest')();
+const { spawn } = require('child_process');
 
 octokit.authenticate({
   type: 'token',
   token: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
 });
+
+const downloadBranch = ({ branch, owner, repo }) => {
+  const gitProcess = spawn('git', [
+    'clone',
+    '--branch',
+    branch,
+    '--single-branch',
+    '--depth=1',
+    `git@github.com:${owner}/${repo}`,
+    `/tmp/${branch}`,
+  ]);
+
+  gitProcess.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  gitProcess.stderr.on('data', (data) => {
+    console.log(`stderr: ${data}`);
+  });
+
+  gitProcess.on('close', (code) => {
+    console.log(`child process exited with code ${code}`);
+  });
+};
 
 const setStatusPending = ({
   owner, repo, sha, state,
@@ -40,7 +65,7 @@ webhooks.on('pull_request', ({ payload }) => {
   );
 
   const {
-    pull_request: { head: { sha } },
+    pull_request: { head: { sha, ref: branch } },
     repository: { name: repo, owner: { login: owner } },
   } = payload;
 
@@ -50,6 +75,8 @@ webhooks.on('pull_request', ({ payload }) => {
     sha,
     state: 'pending',
   });
+
+  downloadBranch({ branch, owner, repo });
 
   setTimeout(() => {
     setStatusPending({
@@ -62,6 +89,7 @@ webhooks.on('pull_request', ({ payload }) => {
 
   console.log('data:');
   console.log({
+    branch,
     owner,
     repo,
     sha,
