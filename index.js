@@ -4,10 +4,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 const debugLog = require('debug')('log');
 const debugError = require('debug')('error');
-const cors = new require('http-cors')();
+const HttpCors = require('http-cors');
 const WebhooksApi = require('@octokit/webhooks');
 const octokit = require('@octokit/rest')();
 const { spawn } = require('child_process');
+
+const cors = new HttpCors();
 
 octokit.authenticate({
   type: 'token',
