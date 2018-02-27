@@ -1,3 +1,5 @@
+const debugLog = require('debug')('log');
+const debugError = require('debug')('error');
 const WebhooksApi = require('@octokit/webhooks');
 const octokit = require('@octokit/rest')();
 const { spawn } = require('child_process');
@@ -19,15 +21,15 @@ const downloadBranch = ({ branch, owner, repo }) => {
   ]);
 
   gitProcess.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
+    debugLog(`stdout: ${data}`);
   });
 
   gitProcess.stderr.on('data', (data) => {
-    console.log(`stderr: ${data}`);
+    debugError(`stderr: ${data}`);
   });
 
   gitProcess.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
+    debugLog(`child process exited with code ${code}`);
   });
 };
 
@@ -42,7 +44,7 @@ const setStatusPending = ({
       state,
       context: 'WIP: Performance budget',
     })
-    .catch(error => console.log(error));
+    .catch(debugError);
 };
 
 const webhooks = new WebhooksApi({
@@ -50,7 +52,7 @@ const webhooks = new WebhooksApi({
 });
 
 webhooks.on('deployment', ({ id, name, payload }) => {
-  console.log(
+  debugLog(
     'DEPLOYMENT:',
     name,
     'event received\n',
@@ -59,7 +61,7 @@ webhooks.on('deployment', ({ id, name, payload }) => {
 });
 
 webhooks.on('pull_request', ({ payload }) => {
-  console.log(
+  debugLog(
     'PULL REQUEST event received:\n',
     JSON.stringify({ payload }, null, 2),
   );
@@ -71,7 +73,7 @@ webhooks.on('pull_request', ({ payload }) => {
   } = payload;
 
   if (!['opened', 'synchronize'].includes(action)) {
-    console.log("exiting since the action wasn't opened or synchronize");
+    debugLog("exiting since the action wasn't opened or synchronize");
     return;
   }
 
@@ -93,8 +95,8 @@ webhooks.on('pull_request', ({ payload }) => {
     });
   }, 15e3);
 
-  console.log('data:');
-  console.log({
+  debugLog('data:');
+  debugLog({
     branch,
     owner,
     repo,
@@ -103,7 +105,7 @@ webhooks.on('pull_request', ({ payload }) => {
 });
 
 webhooks.on('push', ({ id, name, payload }) => {
-  console.log(
+  debugLog(
     'PUSH:',
     name,
     'event received\n',
