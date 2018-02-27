@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 const debugLog = require('debug')('log');
 const debugError = require('debug')('error');
 const cors = new require('http-cors')();
