@@ -113,6 +113,11 @@ webhooks.on('push', ({ id, name, payload }) => {
   );
 });
 
-require('http')
-  .createServer(webhooks.middleware)
-  .listen(process.env.PORT || 3000);
+const server = require('http').createServer(webhooks.middleware);
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  debugLog(`Starting server on http://localhost:${port}`)
+  server.listen(port);
+}
+
+exports.server = server;
