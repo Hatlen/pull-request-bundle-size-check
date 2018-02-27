@@ -976,6 +976,10 @@ expect@^22.4.0:
     jest-message-util "^22.4.0"
     jest-regex-util "^22.1.0"
 
+extend@^2.0.0:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/extend/-/extend-2.0.1.tgz#1ee8010689e7395ff9448241c98652bc759a8260"
+
 extend@~3.0.0, extend@~3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/extend/-/extend-3.0.1.tgz#a755ea7bc1adfcc5a31ce7e762dbaadc5e636444"
@@ -1326,6 +1330,12 @@ html-encoding-sniffer@^1.0.2:
   resolved "https://registry.yarnpkg.com/html-encoding-sniffer/-/html-encoding-sniffer-1.0.2.tgz#e70d84b94da53aa375e11fe3a351be6642ca46f8"
   dependencies:
     whatwg-encoding "^1.0.1"
+
+http-cors@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/http-cors/-/http-cors-1.0.2.tgz#a9e1a43c70ed4adce4eaebcf18fd2c3c4ad35662"
+  dependencies:
+    extend "^2.0.0"
 
 http-signature@~1.1.0:
   version "1.1.1"
