@@ -1,5 +1,6 @@
 const debugLog = require('debug')('log');
 const debugError = require('debug')('error');
+const cors = new require('http-cors')();
 const WebhooksApi = require('@octokit/webhooks');
 const octokit = require('@octokit/rest')();
 const { spawn } = require('child_process');
@@ -113,7 +114,14 @@ webhooks.on('push', ({ id, name, payload }) => {
   );
 });
 
-const server = require('http').createServer(webhooks.middleware);
+const server = require('http').createServer((request, response) => {
+  if (cors.apply(request, response)) {
+    response.end();
+    return;
+  }
+  webhooks.middleware(request, response);
+});
+
 if (require.main === module) {
   const port = process.env.PORT || 3000;
   debugLog(`Starting server on http://localhost:${port}`)
