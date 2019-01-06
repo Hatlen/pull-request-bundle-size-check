@@ -48,21 +48,6 @@ const logProcessOutput = (logPrefix, spawnedProcess) => {
   });
 };
 
-const yarnInstall = ({ branch, repo }) =>
-  new Promise((resolve, reject) => {
-    const yarnProcess = spawn('yarn', ['install', `--cwd=${repoFolderLocation({ branch, repo })}`]);
-
-    logProcessOutput('yarnInstall', yarnProcess);
-
-    yarnProcess.on('close', (code) => {
-      if (code !== 0) {
-        reject(new Error(`yarnInstall failed with error code ${code}`));
-        return;
-      }
-      resolve();
-    });
-  });
-
 const runShellCommand = shellCommand =>
   new Promise((resolve, reject) => {
     const [command, ...commandArguments] = shellCommand.split(' ');
@@ -77,6 +62,9 @@ const runShellCommand = shellCommand =>
       resolve();
     });
   });
+
+const yarnInstall = ({ branch, repo }) =>
+  runShellCommand(`yarn install --cwd=${repoFolderLocation({ branch, repo })}`);
 
 const downloadBranch = ({ branch, owner, repo }) =>
   runShellCommand(`git clone --branch ${branch} --single-branch --depth=1 git@github.com:${owner}/${repo} ${repoFolderLocation({ branch, repo })}`);
@@ -101,6 +89,7 @@ const downloadMasterBranch = ({ owner, repo }) =>
           previousPromise.then(() => task({ branch: 'master', owner, repo })),
         Promise.resolve(),
       )
+      .then(resolve)
       .catch((error) => {
         debugError(error);
         reject(error);
@@ -114,8 +103,8 @@ const downloadMasterBranches = () =>
         const [owner, repo] = repository.split('/');
         return previousPromise.then(() => downloadMasterBranch({ owner, repo }));
       }, Promise.resolve())
-      .catch(reject)
-      .then(resolve);
+      .then(resolve)
+      .catch(reject);
   });
 
 // ALREADY_DOWNLOADED can be used when developing this project
@@ -253,8 +242,6 @@ webhooks.on('pull_request', ({ payload }) => {
           }
         },
       );
-
-      console.log(`${repoFolderLocation({ branch, repo })}/${process.env.DIST_FOLDER}/index.html`);
 
       uploadFiles({ branch, repo })
         .then(() => {
