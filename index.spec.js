@@ -5,10 +5,11 @@ const getPort = require('get-port');
 const promisify = require('pify');
 const mockSpawn = require('mock-spawn');
 const nock = require('nock');
-
-const pushEventPayload = require('./fixtures/pull_request_payload');
 const crypto = require('crypto');
 
+const pushEventPayload = require('./fixtures/pull_request_payload');
+
+// Create signature for the push event payload
 const hmac = crypto.createHmac('SHA1', process.env.GITHUB_SECRET);
 hmac.update(JSON.stringify(pushEventPayload));
 const pushEventPayloadSignature = hmac.digest('hex');
@@ -59,20 +60,21 @@ describe('github-webhook-service', () => {
         return originalReadFileSync.call(this, filename, ...rest);
       });
       fs.readFileSync = mockReadFileSync;
-      fs.createReadStream = jest.fn();
+      fs.createReadStream = jest.fn(filename => `Mocked readStream: ${filename}`);
       mockWriteFileSync = jest.fn();
       fs.writeFileSync = mockWriteFileSync;
       return fs;
     });
 
+    // use same upload mock for all three S3 calls
+    mockS3Upload = jest.fn((_params, _options, callback) => {
+      const errors = false;
+      const data = {};
+      callback(errors, data);
+    });
+
     jest.mock('aws-sdk/clients/s3', () => {
       function mockS3() {
-        mockS3Upload = jest.fn((_params, _options, callback) => {
-          const errors = false;
-          const data = {};
-          callback(errors, data);
-        });
-
         return {
           upload: mockS3Upload,
         };
@@ -91,7 +93,7 @@ describe('github-webhook-service', () => {
     const mockGithubAPIPostBody = jest.fn(() => true);
     const mockGithubAPI = nock('https://api.github.com:443')
       .post(
-        '/repos/mynewsdesk/mnd-publish-frontend/statuses/624d21b51d71310150447f43d18e9db69af39799',
+        '/repos/repository-owner/repository-name/statuses/git-commit-sha',
         mockGithubAPIPostBody,
       )
       .times(2)
@@ -99,7 +101,7 @@ describe('github-webhook-service', () => {
 
     const fs = require('fs');
     fs.setMockFiles({
-      '/tmp/mnd-publish-frontend-master/dist/stats.json': JSON.stringify({
+      '/tmp/repository-name-master/dist/stats.json': JSON.stringify({
         assets: [
           {
             name: 'increased-bundle.js',
@@ -107,7 +109,7 @@ describe('github-webhook-service', () => {
           },
         ],
       }),
-      '/tmp/mnd-publish-frontend-analyze-parsed-bundle-sizes/dist/stats.json': JSON.stringify({
+      '/tmp/repository-name-feature-branch/dist/stats.json': JSON.stringify({
         assets: [
           {
             name: 'increased-bundle.js',
@@ -130,35 +132,82 @@ describe('github-webhook-service', () => {
           },
         }))
       .then((result) => {
-        expect(result.status).toBe(200);
-        expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
-        const generatedReport = mockWriteFileSync.mock.calls[0][1];
-        expect(generatedReport).toMatchSnapshot();
-        expect(generatedReport).toMatch(/The total size increased with:\n.*\+4KB/);
-        expect(generatedReport).toMatch(/increased-bundle.js.*\n.*\+4KB.*\n.*4KB.*\n.*0KB/);
+        // Check that the github status is set to pending
+        expect(mockGithubAPIPostBody).toHaveBeenNthCalledWith(1, {
+          context: 'Perf',
+          state: 'pending',
+        });
+
+        // Download github repos and generate stats.json files
         expect(mockSpawnMock.calls.length).toBe(6);
         expect(mockSpawnMock.calls.map(({ command, args }) => `${command} ${args.join(' ')}`)).toEqual(expect.arrayContaining([
           'git clone --branch master --single-branch --depth=1 git@github.com:github-user/github-repo /tmp/github-repo-master',
           'yarn install --cwd=/tmp/github-repo-master',
           'yarn --cwd=/tmp/github-repo-master build:webpack-bundle-analyzer',
-          'git clone --branch analyze-parsed-bundle-sizes --single-branch --depth=1 git@github.com:mynewsdesk/mnd-publish-frontend /tmp/mnd-publish-frontend-analyze-parsed-bundle-sizes',
-          'yarn install --cwd=/tmp/mnd-publish-frontend-analyze-parsed-bundle-sizes',
-          'yarn --cwd=/tmp/mnd-publish-frontend-analyze-parsed-bundle-sizes build:webpack-bundle-analyzer',
+          'git clone --branch feature-branch --single-branch --depth=1 git@github.com:repository-owner/repository-name /tmp/repository-name-feature-branch',
+          'yarn install --cwd=/tmp/repository-name-feature-branch',
+          'yarn --cwd=/tmp/repository-name-feature-branch build:webpack-bundle-analyzer',
         ]));
-        expect(mockS3Upload).toHaveBeenCalled();
+
+        // Check that the stats.json files are read
+        expect(mockReadFileSync).toHaveBeenNthCalledWith(
+          mockReadFileSync.mock.calls.length - 1,
+          '/tmp/repository-name-feature-branch/dist/stats.json',
+        );
+        expect(mockReadFileSync).toHaveBeenNthCalledWith(
+          mockReadFileSync.mock.calls.length,
+          '/tmp/repository-name-master/dist/stats.json',
+        );
+
+        // The report is generated correctly
+        expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+        const generatedReport = mockWriteFileSync.mock.calls[0][1];
+        expect(generatedReport).toMatchSnapshot();
+        expect(generatedReport).toMatch(/The total size increased with:\n.*\+4KB/);
+        expect(generatedReport).toMatch(/increased-bundle.js.*\n.*\+4KB.*\n.*4KB.*\n.*0KB/);
+
+        // Files are uploaded to S3
+        expect(mockS3Upload).toHaveBeenCalledTimes(3);
+        expect(mockS3Upload).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Body: 'Mocked readStream: /tmp/repository-name-feature-branch/dist/index.html',
+            Key: 'repository-name-feature-branch-index.html',
+          }),
+          expect.any(Object),
+          expect.any(Function),
+        );
+
+        expect(mockS3Upload).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Body: 'Mocked readStream: /tmp/repository-name-feature-branch/dist/report.html',
+            Key: 'repository-name-feature-branch-report.html',
+          }),
+          expect.any(Object),
+          expect.any(Function),
+        );
+
+        expect(mockS3Upload).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Body: 'Mocked readStream: /tmp/repository-name-master/dist/report.html',
+            Key: 'repository-name-master-report.html',
+          }),
+          expect.any(Object),
+          expect.any(Function),
+        );
+
+        // Check that the check results are reported back to github
         expect(mockGithubAPI.isDone()).toBe(true);
         expect(mockGithubAPIPostBody).toHaveBeenCalledTimes(2);
-        expect(mockGithubAPIPostBody).toHaveBeenNthCalledWith(1, {
-          context: 'Perf',
-          state: 'pending',
-        });
         expect(mockGithubAPIPostBody).toHaveBeenNthCalledWith(2, {
           context: 'Perf',
           description: 'Size increase > 2KB (4KB) double check details',
           state: 'failure',
           target_url:
-            'https://<bucket-name>.s3.<region>.amazonaws.com/mnd-publish-frontend-analyze-parsed-bundle-sizes-index.html',
+            'https://<bucket-name>.s3.<region>.amazonaws.com/repository-name-feature-branch-index.html',
         });
+
+        // Check that the server responded with 200
+        expect(result.status).toBe(200);
         done();
       })
       .then(() => server.close())
