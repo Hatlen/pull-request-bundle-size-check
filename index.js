@@ -116,10 +116,7 @@ const downloadMasterBranches = () =>
       .catch(reject);
   });
 
-// ALREADY_DOWNLOADED can be used when developing this project
-if (!process.env.ALREADY_DOWNLOADED) {
-  downloadMasterBranches().catch(debugError);
-}
+downloadMasterBranches().catch(debugError);
 
 const setStatus = ({
   description, owner, repo, sha, state, targetUrl,
@@ -219,13 +216,10 @@ webhooks.on('pull_request', ({ payload }) => {
   });
 
   const tasks = [
-    // ALREADY_DOWNLOADED can be used when developing this project
-    process.env.ALREADY_DOWNLOADED !== 'true' && [
-      deleteBranchFolder.bind(null, { branch, owner, repo }),
-      downloadBranch.bind(null, { branch, owner, repo }),
-      yarnInstall.bind(null, { branch, owner, repo }),
-      yarnRunAnalyze.bind(null, { branch, owner, repo }),
-    ],
+    deleteBranchFolder.bind(null, { branch, owner, repo }),
+    downloadBranch.bind(null, { branch, owner, repo }),
+    yarnInstall.bind(null, { branch, owner, repo }),
+    yarnRunAnalyze.bind(null, { branch, owner, repo }),
     getFileSizes.bind(null, { branch, owner, repo }),
     (fileSizes) => {
       const changeLimit = 2000;
@@ -265,8 +259,6 @@ webhooks.on('pull_request', ({ payload }) => {
     },
   ];
   tasks
-    .filter(task => task) // filter out false if ALREADY_DOWNLOADED is set
-    .flat()
     .reduce((previousPromise, task) => previousPromise.then(task), Promise.resolve())
     .catch(debugError);
 });
