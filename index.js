@@ -19,12 +19,21 @@ if (process.env.NODE_ENV !== 'production') {
 const kBSize = size => `${Math.round(size / 1e3)}KB`;
 const cors = new HttpCors();
 
+const options = {
+  GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
+  GITHUB_SECRET: process.env.GITHUB_SECRET,
+  DIST_FOLDER: process.env.DIST_FOLDER || 'dist',
+  DOWNLOAD_FOLDER: process.env.DOWNLOAD_FOLDER || '/tmp',
+  BUILD_AND_ANALYZE_SCRIPT: process.env.BUILD_AND_ANALYZE_SCRIPT || 'webpack-bundle-analyzer',
+  MONITORED_REPOSITORIES: process.env.MONITORED_REPOSITORIES,
+};
+
 octokit.authenticate({
   type: 'token',
-  token: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
+  token: options.GITHUB_PERSONAL_ACCESS_TOKEN,
 });
 
-const repoFolderLocation = ({ branch, repo }) => `${process.env.DOWNLOAD_FOLDER}/${repo}-${branch}`;
+const repoFolderLocation = ({ branch, repo }) => `${options.DOWNLOAD_FOLDER}/${repo}-${branch}`;
 
 const deleteBranchFolder = ({ branch, repo }) =>
   new Promise((resolve, reject) => {
@@ -70,12 +79,12 @@ const downloadBranch = ({ branch, owner, repo }) =>
   runShellCommand(`git clone --branch ${branch} --single-branch --depth=1 git@github.com:${owner}/${repo} ${repoFolderLocation({ branch, repo })}`);
 
 const yarnRunAnalyze = ({ branch, repo }) =>
-  runShellCommand(`yarn --cwd=${repoFolderLocation({ branch, repo })} ${process.env.BUILD_AND_ANALYZE_SCRIPT}`);
+  runShellCommand(`yarn --cwd=${repoFolderLocation({ branch, repo })} ${options.BUILD_AND_ANALYZE_SCRIPT}`);
 
 const getFileSizes = ({ branch, repo }) =>
   new Promise((resolve) => {
-    const branchStats = JSON.parse(fs.readFileSync(`${repoFolderLocation({ branch, repo })}/${process.env.DIST_FOLDER}/stats.json`));
-    const masterStats = JSON.parse(fs.readFileSync(`${repoFolderLocation({ branch: 'master', repo })}/${process.env.DIST_FOLDER}/stats.json`));
+    const branchStats = JSON.parse(fs.readFileSync(`${repoFolderLocation({ branch, repo })}/${options.DIST_FOLDER}/stats.json`));
+    const masterStats = JSON.parse(fs.readFileSync(`${repoFolderLocation({ branch: 'master', repo })}/${options.DIST_FOLDER}/stats.json`));
 
     resolve(compareAssets(masterStats.assets, branchStats.assets));
   });
@@ -98,7 +107,7 @@ const downloadMasterBranch = ({ owner, repo }) =>
 
 const downloadMasterBranches = () =>
   new Promise((resolve, reject) => {
-    process.env.MONITORED_REPOSITORIES.split(',')
+    options.MONITORED_REPOSITORIES.split(',')
       .reduce((previousPromise, repository) => {
         const [owner, repo] = repository.split('/');
         return previousPromise.then(() => downloadMasterBranch({ owner, repo }));
@@ -129,7 +138,7 @@ const setStatus = ({
 };
 
 const webhooks = new WebhooksApi({
-  secret: process.env.GITHUB_SECRET,
+  secret: options.GITHUB_SECRET,
 });
 
 const s3Region = process.env.AWS_S3_REGION;
@@ -146,9 +155,7 @@ const getS3Url = ({ branch, fileName, repo }) => `${s3BucketUrl}/${repo}-${branc
 
 const uploadCoverageFile = ({ branch, fileName, repo }) =>
   new Promise((fileResolve, fileReject) => {
-    const filePath = `${repoFolderLocation({ branch, repo })}/${
-      process.env.DIST_FOLDER
-    }/${fileName}`;
+    const filePath = `${repoFolderLocation({ branch, repo })}/${options.DIST_FOLDER}/${fileName}`;
     const stream = fs.createReadStream(`${filePath}`);
     s3().upload(
       {
@@ -229,7 +236,7 @@ webhooks.on('pull_request', ({ payload }) => {
           : `Size changed with: ${kBSize(change)}`;
 
       fs.writeFileSync(
-        `${repoFolderLocation({ branch, repo })}/${process.env.DIST_FOLDER}/index.html`,
+        `${repoFolderLocation({ branch, repo })}/${options.DIST_FOLDER}/index.html`,
         perfReportTemplate({
           branch,
           fileSizes,
