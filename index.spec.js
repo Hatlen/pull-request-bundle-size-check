@@ -20,6 +20,7 @@ describe('github-webhook-service', () => {
   let mockSpawnMock;
   let mockReadFileSync;
   let mockWriteFileSync;
+  let mockRimraf;
   let mockS3Upload;
 
   beforeEach((done) => {
@@ -29,6 +30,14 @@ describe('github-webhook-service', () => {
     getPort().then((availablePort) => {
       port = availablePort;
       done();
+    });
+
+    jest.mock('rimraf', () => {
+      mockRimraf = jest.fn((folderLocation, callback) => {
+        callback();
+      });
+
+      return mockRimraf;
     });
 
     jest.mock('child_process', () => {
@@ -132,6 +141,17 @@ describe('github-webhook-service', () => {
           },
         }))
       .then((result) => {
+        // Check that the directories from the previous run has been deleted
+        expect(mockRimraf).toHaveBeenCalledTimes(2);
+        expect(mockRimraf).toHaveBeenCalledWith(
+          '/tmp/repository-name-master',
+          expect.any(Function),
+        );
+        expect(mockRimraf).toHaveBeenCalledWith(
+          '/tmp/repository-name-feature-branch',
+          expect.any(Function),
+        );
+
         // Check that the github status is set to pending
         expect(mockGithubAPIPostBody).toHaveBeenNthCalledWith(1, {
           context: 'Perf',
@@ -141,9 +161,9 @@ describe('github-webhook-service', () => {
         // Download github repos and generate stats.json files
         expect(mockSpawnMock.calls.length).toBe(6);
         expect(mockSpawnMock.calls.map(({ command, args }) => `${command} ${args.join(' ')}`)).toEqual(expect.arrayContaining([
-          'git clone --branch master --single-branch --depth=1 git@github.com:github-user/github-repo /tmp/github-repo-master',
-          'yarn install --cwd=/tmp/github-repo-master',
-          'yarn --cwd=/tmp/github-repo-master build:webpack-bundle-analyzer',
+          'git clone --branch master --single-branch --depth=1 git@github.com:repository-owner/repository-name /tmp/repository-name-master',
+          'yarn install --cwd=/tmp/repository-name-master',
+          'yarn --cwd=/tmp/repository-name-master build:webpack-bundle-analyzer',
           'git clone --branch feature-branch --single-branch --depth=1 git@github.com:repository-owner/repository-name /tmp/repository-name-feature-branch',
           'yarn install --cwd=/tmp/repository-name-feature-branch',
           'yarn --cwd=/tmp/repository-name-feature-branch build:webpack-bundle-analyzer',
