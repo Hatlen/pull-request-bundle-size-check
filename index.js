@@ -25,7 +25,6 @@ const options = {
   DIST_FOLDER: process.env.DIST_FOLDER || 'dist',
   DOWNLOAD_FOLDER: process.env.DOWNLOAD_FOLDER || '/tmp',
   BUILD_AND_ANALYZE_SCRIPT: process.env.BUILD_AND_ANALYZE_SCRIPT || 'webpack-bundle-analyzer',
-  MONITORED_REPOSITORIES: process.env.MONITORED_REPOSITORIES,
 };
 
 octokit.authenticate({
@@ -88,35 +87,6 @@ const getFileSizes = ({ branch, repo }) =>
 
     resolve(compareAssets(masterStats.assets, branchStats.assets));
   });
-
-const downloadMasterBranch = ({ owner, repo }) =>
-  new Promise((resolve, reject) => {
-    const tasks = [deleteBranchFolder, downloadBranch, yarnInstall, yarnRunAnalyze];
-    tasks
-      .reduce(
-        (previousPromise, task) =>
-          previousPromise.then(() => task({ branch: 'master', owner, repo })),
-        Promise.resolve(),
-      )
-      .then(resolve)
-      .catch((error) => {
-        debugError(error);
-        reject(error);
-      });
-  });
-
-const downloadMasterBranches = () =>
-  new Promise((resolve, reject) => {
-    options.MONITORED_REPOSITORIES.split(',')
-      .reduce((previousPromise, repository) => {
-        const [owner, repo] = repository.split('/');
-        return previousPromise.then(() => downloadMasterBranch({ owner, repo }));
-      }, Promise.resolve())
-      .then(resolve)
-      .catch(reject);
-  });
-
-downloadMasterBranches().catch(debugError);
 
 const setStatus = ({
   description, owner, repo, sha, state, targetUrl,
@@ -216,10 +186,14 @@ webhooks.on('pull_request', ({ payload }) => {
   });
 
   const tasks = [
-    deleteBranchFolder.bind(null, { branch, owner, repo }),
-    downloadBranch.bind(null, { branch, owner, repo }),
-    yarnInstall.bind(null, { branch, owner, repo }),
-    yarnRunAnalyze.bind(null, { branch, owner, repo }),
+    () => deleteBranchFolder({ branch: 'master', owner, repo }),
+    () => downloadBranch({ branch: 'master', owner, repo }),
+    () => yarnInstall({ branch: 'master', owner, repo }),
+    () => yarnRunAnalyze({ branch: 'master', owner, repo }),
+    () => deleteBranchFolder({ branch, owner, repo }),
+    () => downloadBranch({ branch, owner, repo }),
+    () => yarnInstall({ branch, owner, repo }),
+    () => yarnRunAnalyze({ branch, owner, repo }),
     getFileSizes.bind(null, { branch, owner, repo }),
     (fileSizes) => {
       const changeLimit = 2000;
