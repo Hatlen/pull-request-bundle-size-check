@@ -1,4 +1,4 @@
-const kBSize = size => `${Math.round(size / 1e3)}KB`;
+const HumanReadableSize = size => (size >= 1000 ? `${Math.round(size / 1e3)}KB` : `${size}B`);
 
 const cSS = `
   body, table {
@@ -45,9 +45,9 @@ const sizeRow = ({
   `
   <tr>
     <td class="name">${name}</td>
-    <td class="${type}">${change > 0 ? '+' : ''}${kBSize(change)}</td>
-    <td>${kBSize(newSize)}</td>
-    <td><del>${kBSize(oldSize)}</del></td>
+    <td class="${type}">${change > 0 ? '+' : ''}${HumanReadableSize(change)}</td>
+    <td>${HumanReadableSize(newSize)}</td>
+    <td><del>${HumanReadableSize(oldSize)}</del></td>
   </tr>
 `;
 
@@ -55,12 +55,17 @@ const perfReportTemplate = ({
   branch, fileSizes, getS3Url, repo,
 }) => {
   const totalChange = fileSizes.reduce((total, fileSize) => total + fileSize.change, 0);
-  const description =
-    totalChange > 0
-      ? `The total size increased with:
-      <span class="bigger">+${kBSize(totalChange)}</span>`
-      : `The size decreased with:
-      <span class="smaller">${kBSize(totalChange)}</span>, great job!!!`;
+  let description;
+  if (totalChange > 0) {
+    description = `The total size increased with:
+      <span class="bigger">+${HumanReadableSize(totalChange)}</span>`;
+  } else if (totalChange === 0) {
+    description = 'The total size stayed the same, great job!!! (?)';
+  } else {
+    description = `The size decreased with:
+      <span class="smaller">${HumanReadableSize(totalChange)}</span>, great job!!!`;
+  }
+
   const typeOrder = ['new', 'bigger', 'smaller', 'deleted'];
   const changed = fileSizes
     .filter(fileSize => fileSize.type !== 'unchanged')
@@ -100,7 +105,7 @@ const perfReportTemplate = ({
         </a>
       </li>
     </ul>
-    <h3>Mast branch details (for comparisions)</h3>
+    <h3>Master branch details (for comparisons)</h3>
     <ul>
       <li>
         <a href="${getS3Url({ branch: 'master', fileName: 'report.html', repo })}">
