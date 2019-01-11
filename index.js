@@ -36,6 +36,7 @@ const repoFolderLocation = ({ branch, repo }) => `${options.DOWNLOAD_FOLDER}/${r
 
 const deleteBranchFolder = ({ branch, repo }) =>
   new Promise((resolve, reject) => {
+    debugLog(`deleteBranchFolder: { branch: ${branch}, repo: ${repo}`);
     rimraf(repoFolderLocation({ branch, repo }), (error) => {
       if (error) {
         debugError("couldn't delete a repo", error);
@@ -58,6 +59,7 @@ const logProcessOutput = (logPrefix, spawnedProcess) => {
 
 const runShellCommand = shellCommand =>
   new Promise((resolve, reject) => {
+    debugLog(`runShellCommand: ${shellCommand}`);
     const [command, ...commandArguments] = shellCommand.split(' ');
     const shellCommandProcess = spawn(command, commandArguments);
     logProcessOutput(shellCommand, shellCommandProcess);
