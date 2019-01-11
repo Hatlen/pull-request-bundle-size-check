@@ -117,7 +117,7 @@ const s3 = () =>
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   });
 const s3BucketName = process.env.AWS_S3_BUCKET_NAME;
-const s3BucketUrl = `https://${s3BucketName}.s3.${s3Region}.amazonaws.com`;
+const s3BucketUrl = `http://s3-${s3Region}.amazonaws.com/${s3BucketName}`;
 const getS3Url = ({ branch, fileName, repo }) => `${s3BucketUrl}/${repo}-${branch}-${fileName}`;
 
 const uploadCoverageFile = ({ branch, fileName, repo }) =>

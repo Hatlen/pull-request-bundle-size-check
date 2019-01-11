@@ -90,7 +90,7 @@ const perfReportTemplate = ({
     <h3>Details</h3>
     <ul>
       <li>
-        <a href="${getS3Url({ branch, fileName: 'bundle-report.html', repo })}">
+        <a href="${getS3Url({ branch, fileName: 'report.html', repo })}">
           Bundle sizes treemap (webpack-bundle-analyzer report.html)
         </a>
       </li>
@@ -103,7 +103,7 @@ const perfReportTemplate = ({
     <h3>Mast branch details (for comparisions)</h3>
     <ul>
       <li>
-        <a href="${getS3Url({ branch: 'master', fileName: 'bundle-report.html', repo })}">
+        <a href="${getS3Url({ branch: 'master', fileName: 'report.html', repo })}">
           <del>Bundle sizes treemap (webpack-bundle-analyzer report.html)</del>
         </a>
       </li>
