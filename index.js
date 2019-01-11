@@ -63,7 +63,7 @@ const runShellCommand = shellCommand =>
     logProcessOutput(shellCommand, shellCommandProcess);
     shellCommandProcess.on('close', (code) => {
       // yarn analyze exits with 1 as the exit code even though it's successful
-      if (code !== 0 && !(code === 1 && shellCommand.match(/yarn analyze/))) {
+      if (code !== 0) {
         reject(new Error(`"${shellCommand}" failed with error code ${code}`));
         return;
       }
