@@ -128,7 +128,7 @@ const uploadCoverageFile = ({ branch, fileName, repo }) =>
       {
         ACL: 'public-read',
         Bucket: s3BucketName,
-        ContentType: 'text/html',
+        ContentType: fileName.match(/\.json$/) ? 'application/json' : 'text/html',
         Body: stream,
         Key: `${repo}-${branch}-${fileName}`,
       },
@@ -146,8 +146,9 @@ const uploadCoverageFile = ({ branch, fileName, repo }) =>
 const uploadFiles = ({ branch, repo }) =>
   new Promise((resolve, reject) => {
     Promise.all([
-      ...['report.html'].map(fileName => uploadCoverageFile({ branch: 'master', fileName, repo })),
-      ...['report.html', 'index.html'].map(fileName =>
+      ...['stats.json', 'report.html'].map(fileName =>
+        uploadCoverageFile({ branch: 'master', fileName, repo })),
+      ...['stats.json', 'report.html', 'index.html'].map(fileName =>
         uploadCoverageFile({ branch, fileName, repo })),
     ])
       .then(([reportUrl, statsUrl]) => {
