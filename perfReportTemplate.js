@@ -51,15 +51,15 @@ const sizeRow = ({
   </tr>
 `;
 
-const perfReportTemplate = ({ branch, fileSizes, getS3Url, repo }) => {
-  const totalChange = fileSizes.reduce(
-    (total, fileSize) => total + fileSize.change,
-    0,
-  );
-  const description = totalChange > 0
-    ? `The total size increased with:
+const perfReportTemplate = ({
+  branch, fileSizes, getS3Url, repo,
+}) => {
+  const totalChange = fileSizes.reduce((total, fileSize) => total + fileSize.change, 0);
+  const description =
+    totalChange > 0
+      ? `The total size increased with:
       <span class="bigger">+${kBSize(totalChange)}</span>`
-    : `The size decreased with:
+      : `The size decreased with:
       <span class="smaller">${kBSize(totalChange)}</span>, great job!!!`;
   const typeOrder = ['new', 'bigger', 'smaller', 'deleted'];
   const changed = fileSizes
