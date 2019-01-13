@@ -16,7 +16,7 @@ if (process.env.NODE_ENV !== 'production') {
   dotenvFlow.config();
 }
 
-const kBSize = size => `${Math.round(size / 1e3)}KB`;
+const kBSize = size => `${Math.round(size / 1e3)}kB`;
 const cors = new HttpCors();
 
 const options = {
@@ -225,7 +225,7 @@ webhooks.on('pull_request', ({ payload }) => {
             owner,
             repo,
             sha,
-            state: change < 2000 ? 'success' : 'failure',
+            state: change < changeLimit ? 'success' : 'failure',
             description,
             targetUrl: getS3Url({ branch, fileName: 'index.html', repo }),
           });
