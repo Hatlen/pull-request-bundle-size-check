@@ -38,14 +38,40 @@ upfront warning if you aren't an avid AWS user :).
 
 ### Deploy the app
 
-I'm using heroku for hosting. To get that to work you create a new heroku app
-and push this repository to it (or configure it to auto-deploy whenever you push
-code to github).
+I'm using heroku for hosting. If you want to deploy this repo to heroku you can
+click this button:
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+If you want to modify this repo you should fork this repo and then click the
+button in your fork's README.md.
 
 ### Upload the app's public ssh key to the github repo/repos
 
-TODO
-TODO Add description on how to get heroku to use a consistent ssh key
+If your hosting provider creates a persistent ssh key for your app, you upload
+that to the repositories you want to monitor.
+![Screenshot of github's upload ssh key settings page](./readme-images/upload-app-ssh-key.png)
+
+Heroku doesn't persist the ssh key over deploys unfortunately. If you deploy
+with the button above you get an extra
+[buildpack](https://devcenter.heroku.com/articles/buildpacks)
+(https://github.com/debitoor/ssh-private-key-buildpack) that uses
+an environment variable as the app's ssh key. That means that you'll have to
+create an ssh key, base64 encode it and set your apps SSH_KEY environment
+variable to that value:
+
+[Generate an ssh key](https://help.github.com/enterprise/2.15/user/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/)
+
+```shell
+# generate ssh key
+ssh-keygen -t rsa -b 4096 -C <your email address>
+```
+
+[Set your apps SSH_KEY environment variable to that key](https://github.com/debitoor/ssh-private-key-buildpack#configure-ssh-key)
+
+```shell
+heroku config:set SSH_KEY=$(cat <path to your newly generated ssh key> | base64)
+```
 
 ### Create a github personal access token (for setting statuses on the pull requests)
 

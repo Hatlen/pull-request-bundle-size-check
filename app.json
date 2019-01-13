@@ -1,0 +1,20 @@
+{
+  "name": "Pull request bundle size check",
+  "description": "An app that checks the size of your webpack bundles and guards against sudden increases in size",
+  "repository": "https://github.com/hatlen/pull-request-bundle-size-check",
+  "keywords": [
+    "node",
+    "github",
+    "performance-regression",
+    "wpo",
+    "github-webhook"
+  ],
+  "buildpacks": [
+    {
+      "url": "https://github.com/debitoor/ssh-private-key-buildpack.git"
+    },
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
+    }
+  ]
+}
