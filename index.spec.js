@@ -183,11 +183,11 @@ describe('github-webhook-service', () => {
         expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
         const generatedReport = mockWriteFileSync.mock.calls[0][1];
         expect(generatedReport).toMatchSnapshot();
-        expect(generatedReport).toMatch(/The total size increased with:\n.*\+4KB/);
-        expect(generatedReport).toMatch(/increased-bundle.js.*\n.*\+4KB.*\n.*4KB.*\n.*0KB/);
+        expect(generatedReport).toMatch(/The total size increased with:\n.*\+4kB/);
+        expect(generatedReport).toMatch(/increased-bundle.js.*\n.*\+4kB.*\n.*4kB.*\n.*1B/);
 
         // Files are uploaded to S3
-        expect(mockS3Upload).toHaveBeenCalledTimes(3);
+        expect(mockS3Upload).toHaveBeenCalledTimes(5);
         expect(mockS3Upload).toHaveBeenCalledWith(
           expect.objectContaining({
             Body: 'Mocked readStream: /tmp/repository-name-feature-branch/dist/index.html',
@@ -220,10 +220,10 @@ describe('github-webhook-service', () => {
         expect(mockGithubAPIPostBody).toHaveBeenCalledTimes(2);
         expect(mockGithubAPIPostBody).toHaveBeenNthCalledWith(2, {
           context: 'Perf',
-          description: 'Size increase > 2KB (4KB) double check details',
+          description: 'Size increase > 2kB (4kB) double check details',
           state: 'failure',
           target_url:
-            'https://<bucket-name>.s3.<region>.amazonaws.com/repository-name-feature-branch-index.html',
+            'https://s3-<region>.amazonaws.com/<bucket-name>/repository-name-feature-branch-index.html',
         });
 
         // Check that the server responded with 200

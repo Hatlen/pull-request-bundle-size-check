@@ -1,4 +1,4 @@
-const HumanReadableSize = size => (size >= 1000 ? `${Math.round(size / 1e3)}KB` : `${size}B`);
+const HumanReadableSize = size => (size >= 1000 ? `${Math.round(size / 1e3)}kB` : `${size}B`);
 
 const cSS = `
   body, table {
