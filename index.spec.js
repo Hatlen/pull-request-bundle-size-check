@@ -162,10 +162,10 @@ describe('github-webhook-service', () => {
         expect(mockSpawnMock.calls.length).toBe(6);
         expect(mockSpawnMock.calls.map(({ command, args }) => `${command} ${args.join(' ')}`)).toEqual(expect.arrayContaining([
           'git clone --branch master --single-branch --depth=1 git@github.com:repository-owner/repository-name /tmp/repository-name-master',
-          'yarn install --cwd=/tmp/repository-name-master',
+          'yarn install --production=false --cwd=/tmp/repository-name-master',
           'yarn --cwd=/tmp/repository-name-master build:webpack-bundle-analyzer',
           'git clone --branch feature-branch --single-branch --depth=1 git@github.com:repository-owner/repository-name /tmp/repository-name-feature-branch',
-          'yarn install --cwd=/tmp/repository-name-feature-branch',
+          'yarn install --production=false --cwd=/tmp/repository-name-feature-branch',
           'yarn --cwd=/tmp/repository-name-feature-branch build:webpack-bundle-analyzer',
         ]));
 

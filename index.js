@@ -72,7 +72,7 @@ const runShellCommand = shellCommand =>
   });
 
 const yarnInstall = ({ branch, repo }) =>
-  runShellCommand(`yarn install --cwd=${repoFolderLocation({ branch, repo })}`);
+  runShellCommand(`yarn install --production=false --cwd=${repoFolderLocation({ branch, repo })}`);
 
 const downloadBranch = ({ branch, owner, repo }) =>
   runShellCommand(`git clone --branch ${branch} --single-branch --depth=1 git@github.com:${owner}/${repo} ${repoFolderLocation({ branch, repo })}`);
