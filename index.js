@@ -25,6 +25,7 @@ const options = {
   DIST_FOLDER: process.env.DIST_FOLDER || 'dist',
   DOWNLOAD_FOLDER: process.env.DOWNLOAD_FOLDER || '/tmp',
   BUILD_AND_ANALYZE_SCRIPT: process.env.BUILD_AND_ANALYZE_SCRIPT || 'webpack-bundle-analyzer',
+  CHANGE_LIMIT: Number(process.env.CHANGE_LIMIT || '2000'),
 };
 
 octokit.authenticate({
@@ -197,7 +198,7 @@ webhooks.on('pull_request', ({ payload }) => {
     () => yarnRunAnalyze({ branch, owner, repo }),
     getFileSizes.bind(null, { branch, owner, repo }),
     (fileSizes) => {
-      const changeLimit = 2000;
+      const changeLimit = options.CHANGE_LIMIT;
       const change = fileSizes.reduce((sum, fileSize) => sum + fileSize.change, 0);
       const description =
         change > changeLimit
