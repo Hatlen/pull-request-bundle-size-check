@@ -111,17 +111,17 @@ describe('github-webhook-service', () => {
     const fs = require('fs');
     fs.setMockFiles({
       '/tmp/repository-name-master/dist/stats.json': JSON.stringify({
-        assets: [
+        chunks: [
           {
-            name: 'increased-bundle.js',
+            files: ['increased-bundle.js'],
             size: 1,
           },
         ],
       }),
       '/tmp/repository-name-feature-branch/dist/stats.json': JSON.stringify({
-        assets: [
+        chunks: [
           {
-            name: 'increased-bundle.js',
+            files: ['increased-bundle.js'],
             size: 4000,
           },
         ],

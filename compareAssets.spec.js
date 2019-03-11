@@ -4,29 +4,35 @@ describe('compareAssets', () => {
   test('transforms two stats.json objects to a diff array', () => {
     const assetsBefore = [
       {
-        name: 'increased-bundle.js',
+        files: ['increased-bundle.js'],
+        modules: [],
         size: 1,
       },
       {
-        name: 'shrunk-bundle.js',
+        files: ['shrunk-bundle.js'],
+        modules: [],
         size: 20,
       },
       {
-        name: 'removed-bundle.js',
+        files: ['removed-bundle.js'],
+        modules: [],
         size: 1000,
       },
     ];
     const assetsAfter = [
       {
-        name: 'increased-bundle.js',
+        files: ['increased-bundle.js'],
+        modules: [],
         size: 2,
       },
       {
-        name: 'shrunk-bundle.js',
+        files: ['shrunk-bundle.js'],
+        modules: [],
         size: 10,
       },
       {
-        name: 'new-bundle.js',
+        files: ['new-bundle.js'],
+        modules: [],
         size: 100,
       },
     ];

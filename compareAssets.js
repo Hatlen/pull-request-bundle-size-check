@@ -1,8 +1,11 @@
 const compareAssets = (oldAssets, newAssets) =>
   newAssets
     .map((newAsset) => {
-      const { name, size } = newAsset;
-      const oldAsset = oldAssets.find(asset => asset.name === name);
+      const {
+        files: [name],
+        size,
+      } = newAsset;
+      const oldAsset = oldAssets.find(asset => asset.files[0] === name);
 
       let type;
       if (!oldAsset) {
@@ -31,9 +34,9 @@ const compareAssets = (oldAssets, newAssets) =>
       };
     })
     .concat(oldAssets
-      .filter(oldAsset => !newAssets.find(newAsset => newAsset.name === oldAsset.name))
+      .filter(oldAsset => !newAssets.find(newAsset => newAsset.files[0] === oldAsset.files[0]))
       .map(oldAsset => ({
-        name: oldAsset.name,
+        name: oldAsset.files[0],
         change: -oldAsset.size,
         newSize: 0,
         oldSize: oldAsset.size,

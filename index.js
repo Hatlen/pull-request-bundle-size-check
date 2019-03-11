@@ -86,7 +86,7 @@ const getFileSizes = ({ branch, repo }) =>
     const branchStats = JSON.parse(fs.readFileSync(`${repoFolderLocation({ branch, repo })}/${options.DIST_FOLDER}/stats.json`));
     const masterStats = JSON.parse(fs.readFileSync(`${repoFolderLocation({ branch: 'master', repo })}/${options.DIST_FOLDER}/stats.json`));
 
-    resolve(compareAssets(masterStats.assets, branchStats.assets));
+    resolve(compareAssets(masterStats.chunks, branchStats.chunks));
   });
 
 const setStatus = ({
